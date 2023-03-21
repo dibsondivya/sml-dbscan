@@ -1,0 +1,127 @@
+---
+title: "Clustering with DBSCAN"
+author: "Suzanne-Kae Rocknathan (1004617)  & Vaishnavi Divya Shridar (1004600)"
+date: "Term 7, 2022"
+output:
+  ioslides_presentation:
+    toc: true
+    widescreen: true
+    smaller: true
+
+---
+<style>
+.reveal .slides section .slideContent{
+    font-size: 10pt;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r, message=FALSE, include=FALSE, echo=FALSE, warning=FALSE}
+library(factoextra)      # for dataset and visualization
+library(ggplot2)         # for visualization
+library(stats)           # for kmeans() function (kmeans clustering)
+library(cluster)         # for the silhouette() function
+library(kernlab)         # for specc() function (spectral clustering)
+library(fpc)             # for dbscan()
+library(dbscan)          # for dbscan()
+library(gifski)   
+```
+
+
+## The Dataset
+
+Given a dataset that looks like this...
+```{r, echo=FALSE}
+data("multishapes")
+df <- multishapes[, 1:2]
+#head(df)
+
+ggplot(df,
+       aes(x,y)) +
+  geom_point()
+```
+
+> How would you group these points?
+
+## Let's try clustering it!
+
+Previously, we learned about 2 methods of clustering:  
+
+*   K-means clustering
+*   Spectral clustering
+
+Let's take a look at how these methods would group the given dataset.
+
+## K-means clustering plot
+```{r, warning = FALSE, echo=FALSE}
+set.seed(555)
+
+km <- kmeans(df, 5, nstart = 25)
+
+plot(df, col=km$cluster, main="K-means Clustering")
+```
+ 
+The clusters here aren't so accurate. 
+Like we learned in class, `kmeans()` usually finds clusters that are spherical and non-overlapping, hence it **doesn't capture nested clusters** like the concentric ovals above.
+
+
+## Spectral clustering plot
+
+```{r, echo=FALSE}
+set.seed(555)
+sc <- specc(as.matrix(df), centers = 5, kpar = "automatic")
+
+plot(df, col=sc, main = "Spectral Clustering", frame = FALSE)
+```
+
+The spectral clustering output for automatically chosen parameters isn't so accurate either...
+
+## Spectral clustering with sigma = 500
+
+By adjusting the sigma parameters, we can get a better output.
+```{r, echo=FALSE}
+set.seed(555)
+sc <- specc(as.matrix(df), centers = 5, kpar = list(sigma=500))
+
+plot(df, col=sc, main = "Spectral Clustering (sigma = 500)", frame = FALSE)
+```
+
+## Results
+The results are much better, but not perfect. 
+
+Notice that...   
+
+*   You have to adjust the sigma parameter to obtain the best clusters. 
+    *   With multivariate datasets, you won't be able to visualize your plots to check if the clusters look appropriate.
+*   The clusters **include noise** (ie. outliers).
+
+*What if we told you there's a better clustering method for this dataset?* 
+
+## DBSCAN clustering plot
+
+Let's take a look at how the DBSCAN method performs!
+```{r, warning = FALSE, echo=FALSE}
+set.seed(555)
+db <- fpc::dbscan(df, eps = 0.15, MinPts = 5)
+
+plot(db, df, main = "DBSCAN", frame = FALSE)
+```
+
+This method managed to not only **successfully group** each of the **visible clusters**, but also **identified the 'noise points'** (that is, points that don't belong to any cluster)!
+
+
+## Clustering with DBSCAN
+
+```{r, animation.hook="gifski", interval=0.1, echo=FALSE, results='hide'}
+set.seed(555)
+fpc::dbscan(df, eps = 0.15, MinPts = 5, showplot = 1)
+```
+
+*Interested to find out how this works? Read our blog to find out more!*    — Team 16
+
+
